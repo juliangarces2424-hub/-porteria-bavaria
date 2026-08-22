@@ -296,12 +296,13 @@ tbody tr:hover td{background:var(--card2)}
         <div class="ms-sec">⚠️ Registro de Demoras <span class="tag tag-new" style="margin-left:4px">NUEVO</span></div>
 
         <div class="q">
-          <div class="q__lbl">7. ¿Se presentó demora significativa? <span class="q__req">*</span></div>
+          <div class="q__lbl">7. ¿Se presentó demora significativa? <span class="q__req">*</span> <span class="tag tag-auto">AUTO</span></div>
+          <div class="q__hint">Se marca solo según el tiempo registrado — puedes cambiarlo si hace falta</div>
           <div class="opts">
-            <label class="opt"><input type="radio" name="huboDemora" value="Sí"
+            <label class="opt"><input type="radio" name="huboDemora" value="Sí" id="radDemoraSi"
                    onchange="showPanel('pDemora',true)" required>
               <span class="opt__t">Sí</span></label>
-            <label class="opt"><input type="radio" name="huboDemora" value="No"
+            <label class="opt"><input type="radio" name="huboDemora" value="No" id="radDemoraNo"
                    onchange="showPanel('pDemora',false)">
               <span class="opt__t">No</span></label>
           </div>
@@ -609,7 +610,11 @@ function calcTime() {
     bdg.textContent=''; bdg.className='calc__bdg'; box.className='calc';
     costEl.style.display='none';
     document.getElementById('tiempoTotal').value='';
-    document.getElementById('tiempoSeg').value='0'; return;
+    document.getElementById('tiempoSeg').value='0';
+    document.getElementById('radDemoraSi').checked=false;
+    document.getElementById('radDemoraNo').checked=false;
+    showPanel('pDemora',false);
+    return;
   }
   const [hA,mA]=a.split(':').map(Number), [hS,mS]=s.split(':').map(Number);
   let seg=(hS*3600+mS*60)-(hA*3600+mA*60);
@@ -632,6 +637,14 @@ function calcTime() {
     costEl.style.display='block';
   } else {
     costEl.style.display='none';
+  }
+
+  /* ── Auto-marcar "¿Hubo demora?" según el tiempo (se puede cambiar a mano) ── */
+  const radSi=document.getElementById('radDemoraSi'), radNo=document.getElementById('radDemoraNo');
+  if(seg>OK){
+    if(!radSi.checked){ radSi.checked=true; showPanel('pDemora',true); }
+  } else {
+    if(!radNo.checked){ radNo.checked=true; showPanel('pDemora',false); }
   }
 }
 
