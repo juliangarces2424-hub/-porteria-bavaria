@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Portería Bavaria — Seguimiento de Tiempos</title>
+
+<!-- ═══ PWA: hace que la página se pueda instalar como app ═══ -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8002d">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portería Bavaria">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+/* ── Reset ────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#e8002d; --dark:#0f1117; --card:#1a1f2e; --card2:#222a3d;
+  --border:#2a3348; --text:#e8eaf0; --sub:#6b7899;
+  --green:#22c55e; --yellow:#f59e0b; --danger:#ef4444;
+  --blue:#3b82f6; --purple:#8b5cf6; --teal:#14b8a6;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--dark);color:var(--text);min-height:100vh}
+
+/* ── Topbar ─────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:200;background:var(--card);border-bottom:1px solid var(--border)}
+.tb-stripe{height:4px;background:linear-gradient(90deg,var(--red),#ff6b6b)}
+.tb-row{display:flex;align-items:stretch;padding:0 20px;max-width:980px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;padding:12px 18px 12px 0;margin-right:4px;border-right:1px solid var(--border)}
+.brand-b{width:34px;height:34px;border-radius:8px;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;flex-shrink:0}
+.brand-name{font-size:13px;font-weight:700;line-height:1.3}
+.brand-loc{font-size:11px;color:var(--sub)}
+.nav{display:flex;flex:1}
+.ntab{display:flex;align-items:center;gap:7px;padding:0 18px;height:58px;border:none;background:none;color:var(--sub);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:color .15s,border-color .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{color:var(--red);border-bottom-color:var(--red)}
+
+/* ── Tab panes ──────────────────────────────── */
+.pane{display:none}.pane.on{display:block}
+
+/* ════════════════════════════════════════════════
+   PANE 1: FORMULARIO (MS Forms style)
+════════════════════════════════════════════════ */
+.form-bg{background:linear-gradient(145deg,#bde0f5 0%,#ceeae4 50%,#c4e3f0 100%);min-height:calc(100vh - 62px);padding:32px 16px 60px}
+.ms-card{max-width:700px;margin:0 auto;background:#fff;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.13);overflow:hidden}
+.ms-stripe{height:10px;background:linear-gradient(90deg,#0078d4,#00b4d8,#00c4b0)}
+.ms-head{padding:28px 36px 20px;border-bottom:1px solid #ededed;position:relative}
+.ms-menu{position:absolute;top:20px;right:20px;background:#f2f2f2;border:none;border-radius:4px;padding:4px 10px;font-size:18px;color:#555;cursor:pointer;letter-spacing:2px;line-height:1}
+.ms-title{font-size:22px;font-weight:700;color:#1b1b1b;margin-bottom:6px}
+.ms-sub{font-size:13px;color:#555;line-height:1.55}
+.ms-req-note{margin-top:10px;font-size:13px;color:#c50f1f;font-weight:500}
+.ms-body{padding:8px 36px 28px;color:#1b1b1b}
+.ms-foot{padding:16px 36px 20px;border-top:1px solid #ededed;background:#fafafa}
+.ms-sec{display:flex;align-items:center;gap:8px;margin:30px 0 16px;font-size:11.5px;font-weight:700;color:#0078d4;text-transform:uppercase;letter-spacing:.7px}
+.ms-sec::after{content:'';flex:1;height:1.5px;background:#d0e6f7;border-radius:2px}
+.q{margin-bottom:22px}
+.q__lbl{font-size:14px;font-weight:600;color:#1b1b1b;margin-bottom:5px;display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.q__req{color:#c50f1f;font-size:16px}
+.q__hint{font-size:12px;color:#666;margin-bottom:7px}
+.inp{width:100%;padding:9px 12px;border:1px solid #d1d1d1;border-radius:4px;font-size:14px;font-family:inherit;color:#1b1b1b;background:#fafafa;outline:none;transition:border-color .15s,background .15s}
+.inp:focus{border-color:#0078d4;background:#fff}
+.inp::placeholder{color:#aaa}
+textarea.inp{min-height:72px;resize:vertical}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:4px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s}
+.opt:hover{background:#edf4fd;border-color:#cde1f5}
+.opt input{width:17px;height:17px;margin-top:1px;accent-color:#0078d4;cursor:pointer;flex-shrink:0}
+.opt__t{font-size:14px;color:#1b1b1b;line-height:1.4}
+.opt__st{font-size:12px;color:#777;display:block}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.time-row{display:flex;gap:8px;align-items:stretch}
+.time-row .inp{flex:1;min-width:0}
+.now-btn{flex-shrink:0;padding:9px 14px;border:1px solid #0078d4;border-radius:4px;background:#0078d4;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;transition:filter .15s,transform .1s}
+.now-btn:hover{filter:brightness(1.1)}
+.now-btn:active{transform:scale(.96)}
+.now-btn.flash{animation:flashOk .5s}
+@keyframes flashOk{0%{background:#107c10;border-color:#107c10}100%{background:#0078d4;border-color:#0078d4}}
+.calc{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:6px;border:1.5px solid #cde1f5;background:#edf4fd;transition:background .3s,border-color .3s}
+.calc__val{font-size:26px;font-weight:700;color:#0078d4;font-variant-numeric:tabular-nums;transition:color .3s}
+.calc__sub{font-size:11px;color:#666;display:block;margin-top:2px}
+.calc__bdg{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600;margin-top:4px}
+.bg-ok{background:#dff6dd!important;border-color:#92d07a!important}.val-ok .calc__val{color:#107c10}
+.bg-warn{background:#fff4ce!important;border-color:#f7c948!important}.val-warn .calc__val{color:#7a5c00}
+.bg-high{background:#fde7e9!important;border-color:#d90026!important}.val-high .calc__val{color:#a4262c}
+.bdg-ok{background:#dff6dd;color:#107c10}.bdg-warn{background:#fff4ce;color:#7a5c00}.bdg-high{background:#fde7e9;color:#a4262c}
+.panel{background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:18px 20px;margin-top:8px;display:none}
+.panel.open{display:block}.panel .q:last-child{margin-bottom:0}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;vertical-align:middle}
+.tag-new{background:#0078d4;color:#fff}.tag-auto{background:#107c10;color:#fff}.tag-soc{background:#fff4ce;color:#7a5c00;border:1px solid #f7c948}
+.ms-btn-row{display:flex;gap:10px;margin-top:20px}
+.ms-btn{padding:9px 22px;border-radius:4px;border:none;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:filter .15s}
+.ms-btn:hover{filter:brightness(1.08)}
+.ms-primary{background:#107c10;color:#fff}.ms-ghost{background:#e0e0e0;color:#333}
+.ms365{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ms365-sq{display:grid;grid-template-columns:1fr 1fr;gap:2px;width:18px;height:18px}
+.ms365-sq div{border-radius:1px}
+.ms365-txt{font-size:11px;color:#666;line-height:1.6}
+
+/* ════════════════════════════════════════════════
+   PANE 2: DASHBOARD
+════════════════════════════════════════════════ */
+.dash{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+.dash-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+.dash-info{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:7px}
+.dash-acts{display:flex;gap:10px;flex-wrap:wrap}
+.d-btn{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:filter .15s}
+.d-btn:hover{filter:brightness(1.1)}
+.d-btn-csv{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.d-btn-del{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.kpi__lbl{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.kpi__val{font-size:36px;font-weight:800;line-height:1;margin-bottom:4px}
+.kpi__desc{font-size:12px;color:var(--sub)}
+.kpi__bar{height:3px;border-radius:2px;margin-top:14px;background:var(--border)}
+.kpi__fill{height:100%;border-radius:2px;transition:width .6s}
+.c-red{color:var(--red)}.c-green{color:var(--green)}.c-yellow{color:var(--yellow)}.c-blue{color:var(--blue)}.c-purple{color:var(--purple)}
+.f-red{background:var(--red)}.f-green{background:var(--green)}.f-yellow{background:var(--yellow)}.f-blue{background:var(--blue)}.f-purple{background:var(--purple)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.chart-card.wide{grid-column:span 2}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hbar-list{display:flex;flex-direction:column;gap:10px}
+.hbar{display:flex;align-items:center;gap:10px}
+.hbar__lbl{font-size:12px;color:var(--sub);width:175px;flex-shrink:0;line-height:1.3}
+.hbar__track{flex:1;height:22px;background:var(--card2);border-radius:4px;overflow:hidden}
+.hbar__fill{height:100%;border-radius:4px;transition:width .6s;min-width:4px}
+.hbar__num{font-size:12px;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+.donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.donut-legend{display:flex;flex-direction:column;gap:10px;flex:1}
+.leg-item{display:flex;align-items:center;gap:8px}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leg-lbl{font-size:12px;color:var(--sub)}
+.leg-val{font-size:12px;font-weight:700;color:var(--text);margin-left:auto;padding-left:8px}
+.empty{text-align:center;padding:48px 20px}
+.empty__icon{font-size:40px;margin-bottom:12px}
+.empty__title{font-size:16px;font-weight:600;margin-bottom:6px}
+.empty__sub{font-size:13px;color:var(--sub);line-height:1.5}
+
+/* ════════════════════════════════════════════════
+   PANE 3: HISTORIAL
+════════════════════════════════════════════════ */
+.hist{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+.hist-filters{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.flt-grp{display:flex;flex-direction:column;gap:4px}
+.flt-lbl{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px}
+.flt-inp{padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card2);color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.flt-inp:focus{border-color:var(--red)}
+.flt-inp::placeholder{color:var(--sub)}
+option{background:var(--card2)}
+.hist-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--card2)}
+th{padding:12px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--card2)}
+.tbdg{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.tbdg-ok{background:#14532d;color:#4ade80}.tbdg-warn{background:#713f12;color:#fbbf24}.tbdg-high{background:#7f1d1d;color:#f87171}.tbdg-gray{background:#374151;color:#9ca3af}
+.del-btn{background:none;border:none;color:var(--sub);cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:color .15s,background .15s}
+.del-btn:hover{color:var(--danger);background:rgba(239,68,68,.1)}
+
+/* ── Toast ──────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:999;background:#107c10;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.35);opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.err{background:var(--danger)}
+
+/* ── Responsive ─────────────────────────────── */
+@media(max-width:620px){
+  .ms-body,.ms-head,.ms-foot{padding-left:20px;padding-right:20px}
+  .tgrid,.kpi-grid,.chart-grid{grid-template-columns:1fr}
+  .chart-card.wide{grid-column:span 1}
+  .ntab{padding:0 12px;font-size:12px;gap:4px}
+  .brand-loc{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ TOPBAR ════════════════════════════════════ -->
+<div class="topbar">
+  <div class="tb-stripe"></div>
+  <div class="tb-row">
+    <div class="brand">
+      <div class="brand-b">B</div>
+      <div>
+        <div class="brand-name">Bavaria S.A.</div>
+        <div class="brand-loc">Cervecería Unión · Itagüí</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="ntab on"  onclick="goTab('registro',this)">📝 Nuevo Registro</button>
+      <button class="ntab"     onclick="goTab('dashboard',this)">📊 Dashboard</button>
+      <button class="ntab"     onclick="goTab('historial',this)">📁 Historial</button>
+    </nav>
+  </div>
+</div>
+
+<!-- ═══ PANE 1: FORMULARIO ════════════════════════ -->
+<div id="pane-registro" class="pane on">
+  <div class="form-bg">
+    <div class="ms-card">
+      <div class="ms-stripe"></div>
+      <div class="ms-head">
+        <button class="ms-menu">···</button>
+        <h1 class="ms-title">Seguimiento Tiempos Portería</h1>
+        <p class="ms-sub">Registro de tiempos de entrada y salida — <strong>Cervecería Unión, Itagüí</strong><br>
+          Cuando envíe este formulario, no se recopilará automáticamente su información personal.</p>
+        <p class="ms-req-note">* Obligatorio</p>
+      </div>
+
+      <form id="mainForm" class="ms-body" onsubmit="submitForm(event)">
+
+        <div class="ms-sec">🚛 Información del Vehículo</div>
+
+        <div class="q">
+          <div class="q__lbl">1. Fecha <span class="q__req">*</span></div>
+          <input id="fecha" type="date" class="inp" required>
+        </div>
+
+        <div class="q">
+          <div class="q__lbl">2. Placa <span class="q__req">*</span></div>
+          <div class="q__hint">Máximo 6 caracteres</div>
+          <input id="placa" type="text" class="inp" placeholder="Ej: ABC123" maxlength="6"
+                 style="text-transform:uppercase;max-width:200px" required>
+        </div>
+
+        <div class="q">
+          <div class="q__lbl">3. Tipo de Vehículo <span class="q__req">*</span></div>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="vehiculo" value="Atómico" required>
+              <span class="opt__t">Atómico</span></label>
+            <label class="opt"><input type="radio" name="vehiculo" value="Estaca">
+              <span class="opt__t">Estaca</span></label>
+            <label class="opt"><input type="radio" name="vehiculo" value="Sider">
+              <span class="opt__t">Sider</span></label>
+          </div>
+        </div>
+
+        <div class="ms-sec">⏱️ Registro de Tiempos</div>
+
+        <div class="tgrid">
+          <div class="q" style="margin-bottom:0">
+            <div class="q__lbl">4. Hora Arribo <span class="q__req">*</span></div>
+            <div class="q__hint">Formato HH:MM &nbsp;ej. 14:35 &nbsp;— o toca el botón</div>
+            <div class="time-row">
+              <input id="horaArribo" type="text" class="inp" placeholder="HH:MM"
+                     maxlength="5" oninput="fmtHM(this);calcTime()" required>
+              <button type="button" class="now-btn" onclick="setNow('horaArribo')" title="Registrar hora actual">🕐 Ahora</button>
+            </div>
+          </div>
+          <div class="q" style="margin-bottom:0">
+            <div class="q__lbl">5. Hora Salida <span class="q__req">*</span></div>
+            <div class="q__hint">Formato HH:MM &nbsp;ej. 14:37 &nbsp;— o toca el botón</div>
+            <div class="time-row">
+              <input id="horaSalida" type="text" class="inp" placeholder="HH:MM"
+                     maxlength="5" oninput="fmtHM(this);calcTime()" required>
+              <button type="button" class="now-btn" onclick="setNow('horaSalida')" title="Registrar hora actual">🕐 Ahora</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" style="margin-top:16px">
+          <div class="q__lbl">6. Tiempo total en portería <span class="tag tag-auto">AUTO</span></div>
+          <div class="q__hint">Calculado automáticamente al ingresar hora arribo y salida</div>
+          <div class="calc" id="calcBox">
+            <div>
+              <div class="calc__val" id="calcVal">--:--</div>
+              <span class="calc__sub" id="calcDesc">minutos : segundos</span>
+              <span class="calc__bdg" id="calcBdg"></span>
+            </div>
+          </div>
+          <input type="hidden" id="tiempoTotal">
+          <input type="hidden" id="tiempoSeg" value="0">
+        </div>
+
+        <div class="ms-sec">⚠️ Registro de Demoras <span class="tag tag-new" style="margin-left:4px">NUEVO</span></div>
+
+        <div class="q">
+          <div class="q__lbl">7. ¿Se presentó demora significativa? <span class="q__req">*</span></div>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="huboDemora" value="Sí"
+                   onchange="showPanel('pDemora',true)" required>
+              <span class="opt__t">Sí</span></label>
+            <label class="opt"><input type="radio" name="huboDemora" value="No"
+                   onchange="showPanel('pDemora',false)">
+              <span class="opt__t">No</span></label>
+          </div>
+          <div class="panel" id="pDemora">
+            <div class="q">
+              <div class="q__lbl" style="margin-bottom:10px">7a. Causa(s) de la demora <span class="q__req">*</span></div>
+              <div class="q__hint">Puede seleccionar más de una opción</div>
+              <div class="opts" style="margin-top:8px">
+
+                <label class="opt"><input type="checkbox" name="causa" value="Validación / conteo de espacios por inspector">
+                  <span class="opt__t">🔢 Validación / conteo de espacios por inspector
+                    <span class="opt__st">Inspector validando o contando espacios vacíos, doble conteo, doble revisión</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Cambio o colocación de precintos / sellos">
+                  <span class="opt__t">🔒 Cambio o colocación de precintos / sellos
+                    <span class="opt__st">Nuevos precintos de bodega, sellos faltantes o sin verificar</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Carpa o cortinas — mal estado o encarpado">
+                  <span class="opt__t">🚛 Carpa o cortinas — mal estado o encarpado
+                    <span class="opt__st">Carpa dura, cortinas no suben, encarpado demorado</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Vehículo no enciende / falla mecánica">
+                  <span class="opt__t">🔑 Vehículo no enciende / falla mecánica
+                    <span class="opt__st">No arranca, problemas mecánicos, vehículo en mal estado</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Conductor sin requisitos digitales">
+                  <span class="opt__t">📱 Conductor sin requisitos digitales
+                    <span class="opt__st">Sin foto en grupo, sin Check-Us, app no sincronizada</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Uno solo en portería">
+                  <span class="opt__t">🚧 Uno solo en portería
+                    <span class="opt__st">Un solo portero disponible generando congestión en el acceso</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Conductor sin documentos físicos completos">
+                  <span class="opt__t">📄 Conductor sin documentos físicos completos
+                    <span class="opt__st">No entregó los documentos requeridos para el trámite</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Abono">
+                  <span class="opt__t">💰 Abono
+                    <span class="opt__st">Trámite de entrega de abono en portería</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Trámite por liquidación">
+                  <span class="opt__t">📑 Trámite por liquidación
+                    <span class="opt__st">Verificación de factura por liquidación o factura de socio</span></span></label>
+
+                <label class="opt"><input type="checkbox" name="causa" value="Validación de documentos en facturación">
+                  <span class="opt__t">📋 Validación de documentos en facturación
+                    <span class="opt__st">Revisión o verificación de los documentos en el área de facturación</span></span></label>
+
+                <label class="opt">
+                  <input type="checkbox" name="causa" value="Otra causa" id="chkOtra"
+                         onchange="showPanel('pOtra',this.checked)">
+                  <span class="opt__t">🔧 Otra causa</span></label>
+              </div>
+            </div>
+            <div class="panel" id="pOtra" style="background:#fff;margin-top:0;margin-bottom:0">
+              <div class="q__lbl" style="margin-bottom:6px">Describa la causa</div>
+              <textarea id="otraDesc" class="inp" placeholder="Describa brevemente la causa..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="ms-btn-row">
+          <button type="submit" class="ms-btn ms-primary">Enviar</button>
+          <button type="button" class="ms-btn ms-ghost" onclick="resetForm()">Limpiar</button>
+        </div>
+        <p style="font-size:11px;color:#888;margin-top:12px">No revele nunca su contraseña.</p>
+      </form>
+
+      <div class="ms-foot">
+        <div class="ms365">
+          <div class="ms365-sq">
+            <div style="background:#f25022"></div><div style="background:#7fba00"></div>
+            <div style="background:#00a4ef"></div><div style="background:#ffb900"></div>
+          </div>
+          <span style="font-size:13px;font-weight:600;color:#444">Microsoft 365</span>
+        </div>
+        <p class="ms365-txt">Este contenido lo creó el propietario del formulario. Microsoft no es responsable de las prácticas de privacidad o seguridad de sus clientes.<br>
+          <a href="#" style="color:#0078d4">Crear mi propio formulario</a> &nbsp;|&nbsp;
+          <a href="#" style="color:#0078d4">Notificar abuso</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PANE 2: DASHBOARD ═════════════════════════ -->
+<div id="pane-dashboard" class="pane">
+  <div class="dash">
+    <div class="dash-top">
+      <div class="dash-info">💾 Los datos se guardan automáticamente en este dispositivo.</div>
+      <div class="dash-acts">
+        <button class="d-btn d-btn-csv" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="d-btn d-btn-del" onclick="confirmClear()">🗑 Limpiar todos los datos</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi__lbl">Total Hoy</div>
+        <div class="kpi__val c-blue" id="kpi-hoy">0</div>
+        <div class="kpi__desc" id="kpi-hoy-d">registros hoy</div>
+        <div class="kpi__bar"><div class="kpi__fill f-blue" id="kpi-hoy-b" style="width:0%"></div></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__lbl">Tiempo Prom.</div>
+        <div class="kpi__val c-green" id="kpi-prom">--</div>
+        <div class="kpi__desc">promedio en portería (MM:SS)</div>
+        <div class="kpi__bar"><div class="kpi__fill f-green" id="kpi-prom-b" style="width:0%"></div></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__lbl">Con Demoras</div>
+        <div class="kpi__val c-yellow" id="kpi-dem">0</div>
+        <div class="kpi__desc" id="kpi-dem-d">de 0 registros</div>
+        <div class="kpi__bar"><div class="kpi__fill f-yellow" id="kpi-dem-b" style="width:0%"></div></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__lbl">En Tiempo Normal</div>
+        <div class="kpi__val c-green" id="kpi-ok">0%</div>
+        <div class="kpi__desc">vehículos ≤ 2 min (objetivo)</div>
+        <div class="kpi__bar"><div class="kpi__fill f-green" id="kpi-ok-b" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card wide">
+        <div class="chart-title"><span class="dot" style="background:var(--red)"></span>Cuellos de Botella — Causas Frecuentes</div>
+        <div id="chart-causas">
+          <div class="empty"><div class="empty__icon">📊</div>
+            <div class="empty__title">Sin datos suficientes</div>
+            <div class="empty__sub">Agrega registros con demoras para ver el análisis de cuellos de botella.</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card wide">
+        <div class="chart-title"><span class="dot" style="background:var(--blue)"></span>Distribución por Tipo de Vehículo</div>
+        <div id="chart-tipos">
+          <div class="empty"><div class="empty__icon">🚛</div>
+            <div class="empty__title">Sin datos suficientes</div>
+            <div class="empty__sub">Los datos aparecerán aquí después de registrar vehículos.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PANE 3: HISTORIAL ══════════════════════════ -->
+<div id="pane-historial" class="pane">
+  <div class="hist">
+    <div class="hist-filters">
+      <div class="flt-grp">
+        <span class="flt-lbl">Placa</span>
+        <input type="text" class="flt-inp" id="flt-placa" placeholder="Buscar placa..."
+               style="width:130px" oninput="renderHist()">
+      </div>
+      <div class="flt-grp">
+        <span class="flt-lbl">Tipo vehículo</span>
+        <select class="flt-inp" id="flt-tipo" onchange="renderHist()" style="width:160px">
+          <option value="">Todos</option>
+          <option>Atómico</option><option>Estaca</option><option>Sider</option>
+        </select>
+      </div>
+      <div class="flt-grp">
+        <span class="flt-lbl">Demora</span>
+        <select class="flt-inp" id="flt-dem" onchange="renderHist()" style="width:130px">
+          <option value="">Todas</option>
+          <option value="Sí">Con demora</option>
+          <option value="No">Sin demora</option>
+        </select>
+      </div>
+      <div class="flt-grp">
+        <span class="flt-lbl">Fecha</span>
+        <input type="date" class="flt-inp" id="flt-fecha" onchange="renderHist()">
+      </div>
+      <button class="d-btn d-btn-csv" style="align-self:flex-end" onclick="clearFlt()">✕ Limpiar filtros</button>
+    </div>
+    <div class="hist-wrap" id="hist-wrap">
+      <div class="empty" style="padding:60px 20px">
+        <div class="empty__icon">📋</div>
+        <div class="empty__title">No hay registros aún</div>
+        <div class="empty__sub">Los registros aparecerán aquí después de enviar el formulario.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════ STORAGE ════════════════════════════════════ */
+const KEY = 'bav_porteria_v2';
+const getAll = () => { try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]} };
+const saveAll = a => localStorage.setItem(KEY, JSON.stringify(a));
+const addReg  = d => { const a=getAll(); a.unshift({id:Date.now(),ts:new Date().toISOString(),...d}); saveAll(a) };
+const delReg  = id => { saveAll(getAll().filter(r=>r.id!==id)); renderHist(); renderDash(); toast('Registro eliminado') };
+
+/* ════ FORM LOGIC ════════════════════════════════ */
+const OK=120, WARN=300;
+
+addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+});
+
+function fmtHM(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,4);
+  if(v.length>2) v=v.slice(0,2)+':'+v.slice(2);
+  el.value=v;
+}
+
+/* ── Captura la hora ACTUAL en la zona horaria de Colombia (America/Bogota),
+     sin importar cómo esté configurado el dispositivo. ── */
+function horaColombiaHM() {
+  const fmt = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: false
+  });
+  const parts = fmt.formatToParts(new Date());
+  const h = parts.find(p=>p.type==='hour').value;
+  const m = parts.find(p=>p.type==='minute').value;
+  return `${h}:${m}`;
+}
+
+function setNow(fieldId) {
+  const el = document.getElementById(fieldId);
+  el.value = horaColombiaHM();
+  calcTime();
+  const btn = el.parentElement.querySelector('.now-btn');
+  btn.classList.remove('flash'); void btn.offsetWidth; btn.classList.add('flash');
+  toast(`🕐 Hora registrada: ${el.value} (Colombia)`);
+}
+
+function calcTime() {
+  const a=document.getElementById('horaArribo').value;
+  const s=document.getElementById('horaSalida').value;
+  const box=document.getElementById('calcBox'), val=document.getElementById('calcVal'),
+        desc=document.getElementById('calcDesc'), bdg=document.getElementById('calcBdg');
+  if(a.length<5||s.length<5){
+    val.textContent='--:--'; desc.textContent='minutos : segundos';
+    bdg.textContent=''; bdg.className='calc__bdg'; box.className='calc';
+    document.getElementById('tiempoTotal').value='';
+    document.getElementById('tiempoSeg').value='0'; return;
+  }
+  const [hA,mA]=a.split(':').map(Number), [hS,mS]=s.split(':').map(Number);
+  let seg=(hS*3600+mS*60)-(hA*3600+mA*60);
+  if(seg<0) seg+=86400;
+  const mm=Math.floor(seg/60), ss=seg%60;
+  const mms=String(mm).padStart(2,'0'), sss=String(ss).padStart(2,'0');
+  val.textContent=`${mms}:${sss}`;
+  document.getElementById('tiempoTotal').value=`${mms}:${sss}`;
+  document.getElementById('tiempoSeg').value=seg;
+  desc.textContent = mm>0?`${mm} min ${ss} seg`:`${ss} segundos`;
+  box.className='calc';
+  if(seg>WARN){ box.classList.add('bg-high','val-high'); bdg.textContent='⚠ Cuello de botella — más de 5 min'; bdg.className='calc__bdg bdg-high'; }
+  else if(seg>OK){ box.classList.add('bg-warn','val-warn'); bdg.textContent='⚡ Demora leve — entre 2 y 5 min'; bdg.className='calc__bdg bdg-warn'; }
+  else{ box.classList.add('bg-ok','val-ok'); bdg.textContent='✓ Tiempo normal — dentro de 2 min'; bdg.className='calc__bdg bdg-ok'; }
+}
+
+function showPanel(id, open) {
+  document.getElementById(id).classList.toggle('open',open);
+  if(!open&&id==='pDemora'){ document.getElementById('pOtra').classList.remove('open'); document.getElementById('chkOtra').checked=false; }
+}
+
+function submitForm(e) {
+  e.preventDefault();
+  const gv=id=>document.getElementById(id)?.value||'';
+  const gr=n=>document.querySelector(`input[name="${n}"]:checked`)?.value||'';
+  const gc=n=>[...document.querySelectorAll(`input[name="${n}"]:checked`)].map(el=>el.value);
+  addReg({
+    fecha:gv('fecha'), placa:gv('placa').toUpperCase(), vehiculo:gr('vehiculo'),
+    horaArribo:gv('horaArribo'), horaSalida:gv('horaSalida'),
+    tiempoTotal:gv('tiempoTotal'), tiempoSeg:parseInt(gv('tiempoSeg'))||0,
+    huboDemora:gr('huboDemora'), causas:gc('causa'), otraDesc:gv('otraDesc'),
+  });
+  toast('✅ Registro guardado correctamente');
+  resetForm(); renderDash();
+}
+
+function resetForm() {
+  document.getElementById('mainForm').reset();
+  document.getElementById('calcBox').className='calc';
+  document.getElementById('calcVal').textContent='--:--';
+  document.getElementById('calcDesc').textContent='minutos : segundos';
+  document.getElementById('calcBdg').textContent='';
+  document.getElementById('tiempoTotal').value='';
+  document.getElementById('tiempoSeg').value='0';
+  document.getElementById('pDemora').classList.remove('open');
+  document.getElementById('pOtra').classList.remove('open');
+  document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+}
+
+/* ════ TABS ════════════════════════════════════ */
+function goTab(name, btn) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pane-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='dashboard') renderDash();
+  if(name==='historial')  renderHist();
+}
+
+/* ════ DASHBOARD ═══════════════════════════════ */
+const VEH_COL={'Atómico':'#e8002d','Estaca':'#3b82f6','Sider':'#22c55e'};
+const BAR_COL=['#e8002d','#f97316','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#14b8a6'];
+
+function renderDash() {
+  const all=getAll(), today=new Date().toISOString().split('T')[0];
+  const todayR=all.filter(r=>r.fecha===today), total=all.length;
+
+  // KPIs
+  document.getElementById('kpi-hoy').textContent=todayR.length;
+  document.getElementById('kpi-hoy-d').textContent=`de ${total} registros totales`;
+  document.getElementById('kpi-hoy-b').style.width=total?Math.min(100,todayR.length/total*100)+'%':'0%';
+
+  const conSeg=all.filter(r=>r.tiempoSeg>0);
+  if(conSeg.length){
+    const pr=Math.round(conSeg.reduce((s,r)=>s+r.tiempoSeg,0)/conSeg.length);
+    document.getElementById('kpi-prom').textContent=`${String(Math.floor(pr/60)).padStart(2,'0')}:${String(pr%60).padStart(2,'0')}`;
+    document.getElementById('kpi-prom-b').style.width=Math.min(100,pr/300*100)+'%';
+  } else {
+    document.getElementById('kpi-prom').textContent='--';
+    document.getElementById('kpi-prom-b').style.width='0%';
+  }
+
+  const cDem=all.filter(r=>r.huboDemora==='Sí').length;
+  document.getElementById('kpi-dem').textContent=cDem;
+  document.getElementById('kpi-dem-d').textContent=`de ${total} registros`;
+  document.getElementById('kpi-dem-b').style.width=total?Math.min(100,cDem/total*100)+'%':'0%';
+
+  const cOk=all.filter(r=>r.tiempoSeg>0&&r.tiempoSeg<=OK).length;
+  const pctOk=total?Math.round(cOk/total*100):0;
+  document.getElementById('kpi-ok').textContent=pctOk+'%';
+  document.getElementById('kpi-ok-b').style.width=pctOk+'%';
+
+  // Causas chart
+  const cc={};
+  all.filter(r=>r.causas&&r.causas.length).forEach(r=>r.causas.forEach(c=>{cc[c]=(cc[c]||0)+1}));
+  const causas=Object.entries(cc).sort((a,b)=>b[1]-a[1]);
+  const maxC=causas[0]?.[1]||1;
+  document.getElementById('chart-causas').innerHTML = causas.length
+    ? `<div class="hbar-list">${causas.map(([c,n],i)=>`
+        <div class="hbar">
+          <div class="hbar__lbl">${c}</div>
+          <div class="hbar__track"><div class="hbar__fill" style="width:${n/maxC*100}%;background:${BAR_COL[i%BAR_COL.length]}"></div></div>
+          <div class="hbar__num" style="color:${BAR_COL[i%BAR_COL.length]}">${n}</div>
+        </div>`).join('')}</div>`
+    : `<div class="empty"><div class="empty__icon">📊</div><div class="empty__title">Sin datos suficientes</div><div class="empty__sub">Agrega registros con demoras para ver el análisis de cuellos de botella.</div></div>`;
+
+  // Tipos donut
+  const tc={};
+  all.forEach(r=>{tc[r.vehiculo]=(tc[r.vehiculo]||0)+1});
+  const tipos=Object.entries(tc);
+  if(!tipos.length){
+    document.getElementById('chart-tipos').innerHTML=`<div class="empty"><div class="empty__icon">🚛</div><div class="empty__title">Sin datos suficientes</div><div class="empty__sub">Los datos aparecerán aquí después de registrar vehículos.</div></div>`;
+    return;
+  }
+  const tv=tipos.reduce((s,[,n])=>s+n,0);
+  let cum=0;
+  const segs=tipos.map(([tipo,n])=>{const p=n/tv,st=cum;cum+=p;return{tipo,n,p,st}});
+  const R=72,cx=82,cy=82,rh=44;
+  const arcs=segs.map(({p,st,tipo})=>{
+    const col=VEH_COL[tipo]||'#6b7280';
+    if(p>=0.999) return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${col}" opacity=".9"/><circle cx="${cx}" cy="${cy}" r="${rh}" fill="var(--card)"/>`;
+    const a1=st*2*Math.PI-Math.PI/2, a2=(st+p)*2*Math.PI-Math.PI/2;
+    const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const xi1=cx+rh*Math.cos(a1),yi1=cy+rh*Math.sin(a1),xi2=cx+rh*Math.cos(a2),yi2=cy+rh*Math.sin(a2);
+    const lg=p>0.5?1:0;
+    return `<path d="M${x1},${y1} A${R},${R} 0 ${lg},1 ${x2},${y2} L${xi2},${yi2} A${rh},${rh} 0 ${lg},0 ${xi1},${yi1} Z" fill="${col}" opacity=".9"/>`;
+  }).join('');
+  const legend=segs.map(({tipo,n,p})=>`
+    <div class="leg-item">
+      <div class="leg-dot" style="background:${VEH_COL[tipo]||'#6b7280'}"></div>
+      <span class="leg-lbl">${tipo}</span>
+      <span class="leg-val">${n} <span style="color:var(--sub);font-weight:400">(${Math.round(p*100)}%)</span></span>
+    </div>`).join('');
+  document.getElementById('chart-tipos').innerHTML=`
+    <div class="donut-wrap">
+      <svg width="164" height="164" viewBox="0 0 164 164" style="flex-shrink:0">
+        ${arcs}
+        <circle cx="${cx}" cy="${cy}" r="${rh}" fill="var(--card)"/>
+        <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="22" font-weight="800" fill="var(--text)" font-family="Segoe UI,sans-serif">${tv}</text>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="11" fill="var(--sub)" font-family="Segoe UI,sans-serif">total</text>
+      </svg>
+      <div class="donut-legend">${legend}</div>
+    </div>`;
+}
+
+/* ════ HISTORIAL ════════════════════════════════ */
+function renderHist() {
+  let all=getAll();
+  const pl=(document.getElementById('flt-placa')?.value||'').toUpperCase().trim();
+  const tp=document.getElementById('flt-tipo')?.value||'';
+  const dm=document.getElementById('flt-dem')?.value||'';
+  const fe=document.getElementById('flt-fecha')?.value||'';
+  if(pl) all=all.filter(r=>r.placa.includes(pl));
+  if(tp) all=all.filter(r=>r.vehiculo===tp);
+  if(dm) all=all.filter(r=>r.huboDemora===dm);
+  if(fe) all=all.filter(r=>r.fecha===fe);
+  const wrap=document.getElementById('hist-wrap');
+  if(!all.length){
+    wrap.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="empty__icon">📋</div>
+      <div class="empty__title">No hay registros</div>
+      <div class="empty__sub">${getAll().length?'Ningún registro coincide con los filtros.':'Los registros aparecerán aquí después de enviar el formulario.'}</div></div>`;
+    return;
+  }
+  const rows=all.map(r=>{
+    const s=r.tiempoSeg||0;
+    let bc=s>WARN?'tbdg-high':s>OK?'tbdg-warn':s>0?'tbdg-ok':'tbdg-gray';
+    const dBdg=r.huboDemora==='Sí'?`<span class="tbdg tbdg-warn">Sí</span>`:`<span class="tbdg tbdg-ok">No</span>`;
+    const causas=(r.causas||[]).length?(r.causas||[]).join(', '):'—';
+    return `<tr>
+      <td style="white-space:nowrap">${r.fecha||'—'}</td>
+      <td><strong>${r.placa||'—'}</strong></td>
+      <td>${r.vehiculo||'—'}</td>
+      <td>${r.horaArribo||'—'}</td>
+      <td>${r.horaSalida||'—'}</td>
+      <td><span class="tbdg ${bc}">${r.tiempoTotal||'—'}</span></td>
+      <td>${dBdg}</td>
+      <td style="max-width:200px;white-space:normal;font-size:11px;color:var(--sub)">${causas}</td>
+      <td><button class="del-btn" onclick="delReg(${r.id})" title="Eliminar">🗑</button></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Fecha</th><th>Placa</th><th>Tipo</th><th>Arribo</th><th>Salida</th><th>Tiempo</th><th>Demora</th><th>Causas</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function clearFlt(){
+  ['flt-placa','flt-tipo','flt-dem','flt-fecha'].forEach(id=>document.getElementById(id).value='');
+  renderHist();
+}
+
+/* ════ EXPORT CSV ═══════════════════════════════ */
+function exportCSV(){
+  const all=getAll();
+  if(!all.length){toast('⚠ No hay datos para exportar',true);return}
+  const H=['ID','Fecha','Placa','Tipo Vehículo','Hora Arribo','Hora Salida','Tiempo (MM:SS)','Tiempo (seg)','¿Demora?','Causas'];
+  const esc=v=>`"${(v||'').toString().replace(/"/g,'""')}"`;
+  const csv=[H.map(esc).join(','),...all.map(r=>[r.id,r.fecha,r.placa,r.vehiculo,r.horaArribo,r.horaSalida,r.tiempoTotal,r.tiempoSeg,r.huboDemora,(r.causas||[]).join(' | ')].map(esc).join(','))].join('\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})),download:`porteria_bavaria_${new Date().toISOString().split('T')[0]}.csv`});
+  a.click(); toast('✅ CSV exportado correctamente');
+}
+
+/* ════ CLEAR ALL ════════════════════════════════ */
+function confirmClear(){
+  if(!getAll().length){toast('⚠ No hay datos que limpiar',true);return}
+  if(confirm('¿Eliminar TODOS los registros?\nEsta acción no se puede deshacer.')){
+    localStorage.removeItem(KEY); renderDash(); renderHist(); toast('🗑 Todos los datos eliminados');
+  }
+}
+
+/* ════ TOAST ════════════════════════════════════ */
+let tTimer;
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(err?' err':'')+' show';
+  clearTimeout(tTimer); tTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* ── Registrar service worker (habilita instalación como app y modo sin conexión) ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
