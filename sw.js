@@ -1,6 +1,7 @@
-const CACHE = 'porteria-bavaria-v1';
+const CACHE = 'porteria-bavaria-v2';
 const FILES = [
-  './seguimiento_porteria_bavaria.html',
+  './',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
