@@ -1,4 +1,4 @@
-const CACHE = 'porteria-bavaria-v3';
+const CACHE = 'porteria-bavaria-v4';
 const FILES = [
   './',
   './index.html',

@@ -83,20 +83,6 @@ textarea.inp{min-height:72px;resize:vertical}
 .calc__val{font-size:26px;font-weight:700;color:#0078d4;font-variant-numeric:tabular-nums;transition:color .3s}
 .calc__sub{font-size:11px;color:#666;display:block;margin-top:2px}
 .calc__bdg{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600;margin-top:4px}
-.calc__cost{display:block;font-size:13px;font-weight:700;color:#a4262c;margin-top:6px}
-.cost-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:18px}
-.cost-card__title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px}
-.cost-card__hint{font-size:12px;color:var(--sub);margin-bottom:14px}
-.cost-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
-.cost-grp{display:flex;flex-direction:column;gap:4px}
-.cost-lbl{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px}
-.cost-inp{padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;outline:none;width:170px}
-.cost-inp:focus{border-color:var(--red)}
-.cost-sel{padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;outline:none;width:100px}
-.cost-save{padding:9px 18px;border-radius:6px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
-.cost-save:hover{filter:brightness(1.1)}
-.cost-active{font-size:12px;color:var(--sub);margin-top:10px}
-.cost-active b{color:var(--green)}
 .bg-ok{background:#dff6dd!important;border-color:#92d07a!important}.val-ok .calc__val{color:#107c10}
 .bg-warn{background:#fff4ce!important;border-color:#f7c948!important}.val-warn .calc__val{color:#7a5c00}
 .bg-high{background:#fde7e9!important;border-color:#d90026!important}.val-high .calc__val{color:#a4262c}
@@ -286,7 +272,6 @@ tbody tr:hover td{background:var(--card2)}
               <div class="calc__val" id="calcVal">--:--</div>
               <span class="calc__sub" id="calcDesc">minutos : segundos</span>
               <span class="calc__bdg" id="calcBdg"></span>
-              <span class="calc__cost" id="calcCost" style="display:none"></span>
             </div>
           </div>
           <input type="hidden" id="tiempoTotal">
@@ -399,34 +384,6 @@ tbody tr:hover td{background:var(--card2)}
       </div>
     </div>
 
-    <div class="cost-card">
-      <div class="cost-card__title">💰 Costo estimado por demora</div>
-      <div class="cost-card__hint">Ingresa cuánto le cuesta a la empresa cada minuto que un vehículo se pasa de los 2 minutos en portería. Este valor lo defines tú o tu jefa — la página hace el cálculo automáticamente.</div>
-      <div class="cost-row">
-        <div class="cost-grp">
-          <span class="cost-lbl">Costo por minuto</span>
-          <input type="number" id="costoMinuto" class="cost-inp" placeholder="Ej: 5000" min="0" step="any">
-        </div>
-        <div class="cost-grp">
-          <span class="cost-lbl">Moneda</span>
-          <select id="costoMoneda" class="cost-sel">
-            <option value="COP">COP $</option>
-            <option value="USD">USD $</option>
-            <option value="EUR">EUR €</option>
-            <option value="MXN">MXN $</option>
-          </select>
-        </div>
-        <button class="cost-save" onclick="saveCostConfig()">Guardar</button>
-      </div>
-      <div class="cost-active" id="costActive">Sin configurar todavía — ingresa un valor y guarda.</div>
-    </div>
-
-    <div class="kpi" style="margin-bottom:14px;background:linear-gradient(135deg,#3a0d0d,#1a1f2e);border-color:#7f1d1d">
-      <div class="kpi__lbl">💸 Costo Total Estimado por Demoras</div>
-      <div class="kpi__val" style="color:#f87171;font-size:42px" id="kpi-costo">--</div>
-      <div class="kpi__desc" id="kpi-costo-d">Configura el costo por minuto arriba para ver este dato</div>
-    </div>
-
     <div class="kpi-grid">
       <div class="kpi">
         <div class="kpi__lbl">Total Hoy</div>
@@ -532,7 +489,6 @@ const OK=120, WARN=300;
 
 addEventListener('DOMContentLoaded', () => {
   document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
-  renderCostActive();
 });
 
 function fmtHM(el) {
@@ -562,53 +518,14 @@ function setNow(fieldId) {
   toast(`🕐 Hora registrada: ${el.value} (Colombia)`);
 }
 
-/* ════ CONFIGURACIÓN DE COSTO POR MINUTO ════════════════════
-   El valor lo define el usuario (Julián / su jefa) porque
-   solo la empresa conoce su costo real de demora.
-   ─────────────────────────────────────────────────────── */
-const COST_KEY = 'bav_costo_config';
-const CUR_SYM = {COP:'$', USD:'$', EUR:'€', MXN:'$'};
-
-function getCostConfig() {
-  try { return JSON.parse(localStorage.getItem(COST_KEY)) || null; }
-  catch { return null; }
-}
-function saveCostConfig() {
-  const val = parseFloat(document.getElementById('costoMinuto').value);
-  const mon = document.getElementById('costoMoneda').value;
-  if(!val || val<=0){ toast('⚠ Ingresa un valor de costo válido', true); return; }
-  localStorage.setItem(COST_KEY, JSON.stringify({costo:val, moneda:mon}));
-  renderCostActive();
-  calcTime(); renderDash();
-  toast('✅ Costo por minuto guardado');
-}
-function fmtMoney(n, mon) {
-  const sym = CUR_SYM[mon]||'$';
-  return sym+' '+Math.round(n).toLocaleString('es-CO')+' '+mon;
-}
-function renderCostActive() {
-  const cfg = getCostConfig();
-  const el = document.getElementById('costActive');
-  if(!el) return;
-  if(cfg){
-    document.getElementById('costoMinuto').value = cfg.costo;
-    document.getElementById('costoMoneda').value = cfg.moneda;
-    el.innerHTML = `Configurado: <b>${fmtMoney(cfg.costo, cfg.moneda)} por minuto</b> de demora por encima de los 2 min`;
-  } else {
-    el.textContent = 'Sin configurar todavía — ingresa un valor y guarda.';
-  }
-}
-
 function calcTime() {
   const a=document.getElementById('horaArribo').value;
   const s=document.getElementById('horaSalida').value;
   const box=document.getElementById('calcBox'), val=document.getElementById('calcVal'),
-        desc=document.getElementById('calcDesc'), bdg=document.getElementById('calcBdg'),
-        costEl=document.getElementById('calcCost');
+        desc=document.getElementById('calcDesc'), bdg=document.getElementById('calcBdg');
   if(a.length<5||s.length<5){
     val.textContent='--:--'; desc.textContent='minutos : segundos';
     bdg.textContent=''; bdg.className='calc__bdg'; box.className='calc';
-    costEl.style.display='none';
     document.getElementById('tiempoTotal').value='';
     document.getElementById('tiempoSeg').value='0';
     document.getElementById('radDemoraSi').checked=false;
@@ -629,15 +546,6 @@ function calcTime() {
   if(seg>WARN){ box.classList.add('bg-high','val-high'); bdg.textContent='⚠ Cuello de botella — más de 5 min'; bdg.className='calc__bdg bdg-high'; }
   else if(seg>OK){ box.classList.add('bg-warn','val-warn'); bdg.textContent='⚡ Demora leve — entre 2 y 5 min'; bdg.className='calc__bdg bdg-warn'; }
   else{ box.classList.add('bg-ok','val-ok'); bdg.textContent='✓ Tiempo normal — dentro de 2 min'; bdg.className='calc__bdg bdg-ok'; }
-
-  const cfg = getCostConfig();
-  if(cfg && seg>OK){
-    const costo = ((seg-OK)/60)*cfg.costo;
-    costEl.textContent = `💸 Costo estimado de esta demora: ${fmtMoney(costo, cfg.moneda)}`;
-    costEl.style.display='block';
-  } else {
-    costEl.style.display='none';
-  }
 
   /* ── Auto-marcar "¿Hubo demora?" según el tiempo (se puede cambiar a mano) ── */
   const radSi=document.getElementById('radDemoraSi'), radNo=document.getElementById('radDemoraNo');
@@ -698,19 +606,6 @@ const BAR_COL=['#e8002d','#f97316','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#14b
 function renderDash() {
   const all=getAll(), today=new Date().toISOString().split('T')[0];
   const todayR=all.filter(r=>r.fecha===today), total=all.length;
-
-  renderCostActive();
-  const cfg=getCostConfig();
-  const kc=document.getElementById('kpi-costo'), kcd=document.getElementById('kpi-costo-d');
-  if(cfg){
-    const excedidos=all.filter(r=>r.tiempoSeg>OK);
-    const costoTotal=excedidos.reduce((s,r)=>s+((r.tiempoSeg-OK)/60)*cfg.costo,0);
-    kc.textContent=fmtMoney(costoTotal,cfg.moneda);
-    kcd.textContent=excedidos.length?`Acumulado en ${excedidos.length} vehículo${excedidos.length>1?'s':''} que superaron los 2 min`:'Ningún vehículo ha superado los 2 min todavía';
-  } else {
-    kc.textContent='--';
-    kcd.textContent='Configura el costo por minuto arriba para ver este dato';
-  }
 
   // KPIs
   document.getElementById('kpi-hoy').textContent=todayR.length;
@@ -808,13 +703,11 @@ function renderHist() {
       <div class="empty__sub">${getAll().length?'Ningún registro coincide con los filtros.':'Los registros aparecerán aquí después de enviar el formulario.'}</div></div>`;
     return;
   }
-  const cfg=getCostConfig();
   const rows=all.map(r=>{
     const s=r.tiempoSeg||0;
     let bc=s>WARN?'tbdg-high':s>OK?'tbdg-warn':s>0?'tbdg-ok':'tbdg-gray';
     const dBdg=r.huboDemora==='Sí'?`<span class="tbdg tbdg-warn">Sí</span>`:`<span class="tbdg tbdg-ok">No</span>`;
     const causas=(r.causas||[]).length?(r.causas||[]).join(', '):'—';
-    const costoTxt = (cfg && s>OK) ? fmtMoney(((s-OK)/60)*cfg.costo, cfg.moneda) : '—';
     return `<tr>
       <td style="white-space:nowrap">${r.fecha||'—'}</td>
       <td><strong>${r.placa||'—'}</strong></td>
@@ -823,13 +716,12 @@ function renderHist() {
       <td>${r.horaSalida||'—'}</td>
       <td><span class="tbdg ${bc}">${r.tiempoTotal||'—'}</span></td>
       <td>${dBdg}</td>
-      <td style="white-space:nowrap;color:#f87171;font-weight:600">${costoTxt}</td>
       <td style="max-width:200px;white-space:normal;font-size:11px;color:var(--sub)">${causas}</td>
       <td><button class="del-btn" onclick="delReg(${r.id})" title="Eliminar">🗑</button></td>
     </tr>`;
   }).join('');
   wrap.innerHTML=`<div style="overflow-x:auto"><table>
-    <thead><tr><th>Fecha</th><th>Placa</th><th>Tipo</th><th>Arribo</th><th>Salida</th><th>Tiempo</th><th>Demora</th><th>Costo</th><th>Causas</th><th></th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Placa</th><th>Tipo</th><th>Arribo</th><th>Salida</th><th>Tiempo</th><th>Demora</th><th>Causas</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
@@ -842,13 +734,11 @@ function clearFlt(){
 function exportCSV(){
   const all=getAll();
   if(!all.length){toast('⚠ No hay datos para exportar',true);return}
-  const cfg=getCostConfig();
-  const H=['ID','Fecha','Placa','Tipo Vehículo','Hora Arribo','Hora Salida','Tiempo (MM:SS)','Tiempo (seg)','¿Demora?','Causas','Minutos Excedentes','Costo Estimado'];
+  const H=['ID','Fecha','Placa','Tipo Vehículo','Hora Arribo','Hora Salida','Tiempo (MM:SS)','Tiempo (seg)','¿Demora?','Causas','Minutos Excedentes'];
   const esc=v=>`"${(v||'').toString().replace(/"/g,'""')}"`;
   const csv=[H.map(esc).join(','),...all.map(r=>{
     const exceso = r.tiempoSeg>OK ? ((r.tiempoSeg-OK)/60).toFixed(2) : '0';
-    const costo = (cfg && r.tiempoSeg>OK) ? Math.round(((r.tiempoSeg-OK)/60)*cfg.costo) : '';
-    return [r.id,r.fecha,r.placa,r.vehiculo,r.horaArribo,r.horaSalida,r.tiempoTotal,r.tiempoSeg,r.huboDemora,(r.causas||[]).join(' | '),exceso,costo].map(esc).join(',');
+    return [r.id,r.fecha,r.placa,r.vehiculo,r.horaArribo,r.horaSalida,r.tiempoTotal,r.tiempoSeg,r.huboDemora,(r.causas||[]).join(' | '),exceso].map(esc).join(',');
   })].join('\n');
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})),download:`porteria_bavaria_${new Date().toISOString().split('T')[0]}.csv`});
   a.click(); toast('✅ CSV exportado correctamente');
